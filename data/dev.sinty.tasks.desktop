@@ -1,0 +1,15 @@
+[Desktop Entry]
+Name=Tasks
+Comment=Plan what to do today and later
+Exec=singularity-tasks %U
+Icon=dev.sinty.tasks
+Terminal=false
+Type=Application
+Categories=Office;ProjectManagement;
+Keywords=todo;to-do;task;tasks;list;checklist;reminder;planner;ics;
+StartupWMClass=dev.sinty.tasks
+Actions=new-task;
+
+[Desktop Action new-task]
+Name=New Task
+Exec=singularity-tasks --new-task

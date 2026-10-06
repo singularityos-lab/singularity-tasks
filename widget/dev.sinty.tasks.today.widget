@@ -1,0 +1,8 @@
+[Widget]
+Id=tasks.today
+ProviderId=dev.sinty.tasks
+Name=Today's Tasks
+IconName=dev.sinty.tasks
+Sizes=2x2;2x3
+Module=libsingularity-tasks-widget.so
+ModuleSymbol=singularity_tasks_widget_new

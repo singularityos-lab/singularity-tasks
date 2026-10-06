@@ -1,0 +1,28 @@
+{
+    "schema-id": "dev.sinty.tasks",
+    "settings": [
+        {
+            "key": "focus-minutes",
+            "label": "Focus Length (minutes)",
+            "type": "int",
+            "widget": "spin",
+            "min": 1,
+            "max": 120
+        },
+        {
+            "key": "break-minutes",
+            "label": "Break Length (minutes)",
+            "type": "int",
+            "widget": "spin",
+            "min": 1,
+            "max": 60
+        },
+        {
+            "key": "show-in-calendar",
+            "label": "Show Due Tasks in Calendar",
+            "subtitle": "Open tasks with a due date appear in the Tasks calendar",
+            "type": "boolean",
+            "widget": "toggle"
+        }
+    ]
+}

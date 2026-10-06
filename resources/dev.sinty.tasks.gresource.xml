@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/dev/sinty/tasks/icons/scalable/actions">
+    <file alias="tasks-priority-symbolic.svg">symbolic/tasks-priority-symbolic.svg</file>
+    <file alias="tasks-tag-symbolic.svg">symbolic/tasks-tag-symbolic.svg</file>
+  </gresource>
+</gresources>

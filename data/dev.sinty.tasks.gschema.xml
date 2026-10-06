@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="dev.sinty.tasks" path="/dev/sinty/tasks/">
+    <key name="focus-minutes" type="i">
+      <default>25</default>
+      <range min="1" max="120"/>
+      <summary>Focus length</summary>
+      <description>Minutes of work in one focus session.</description>
+    </key>
+    <key name="break-minutes" type="i">
+      <default>5</default>
+      <range min="1" max="60"/>
+      <summary>Break length</summary>
+      <description>Minutes of rest after a focus session.</description>
+    </key>
+    <key name="show-in-calendar" type="b">
+      <default>true</default>
+      <summary>Show due tasks in Calendar</summary>
+      <description>Open tasks with a due date appear as a Tasks calendar in Calendar.</description>
+    </key>
+  </schema>
+</schemalist>

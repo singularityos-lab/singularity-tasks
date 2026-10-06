@@ -1,0 +1,17 @@
+src/app.vala
+src/window.vala
+src/detail.vala
+src/row.vala
+src/model.vala
+src/storage.vala
+src/ical.vala
+src/format.vala
+src/quickparse.vala
+src/repeat.vala
+src/focus.vala
+src/calendar_feed.vala
+src/search.vala
+src/online.vala
+widget/today_widget.vala
+plugin/tasks_badge.vala
+src/online_mirror.vala
