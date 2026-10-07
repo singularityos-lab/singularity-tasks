@@ -222,6 +222,25 @@ namespace Singularity.Apps.Tasks {
             var add_today = new SimpleAction ("add-task-today", VariantType.STRING);
             add_today.activate.connect ((p) => quick_add (p.get_string (), true));
             add_action (add_today);
+            var add_linked = new SimpleAction ("add-linked-task", new VariantType ("(ss)"));
+            add_linked.activate.connect ((p) => {
+                string uid = p.get_child_value (0).get_string ();
+                if (uid == "" || store.find (uid) != null) return;
+                var t = quick_add (p.get_child_value (1).get_string (), false);
+                if (t != null) t.uid = uid;
+            });
+            add_action (add_linked);
+            var set_completed = new SimpleAction ("set-task-completed", new VariantType ("(sb)"));
+            set_completed.activate.connect ((p) => {
+                var t = store.find (p.get_child_value (0).get_string ());
+                bool done = p.get_child_value (1).get_boolean ();
+                if (t == null || t.completed == done) return;
+                store.set_completed (t, done, new DateTime.now_utc ());
+                schedule_save ();
+                store.notify_changed ();
+                if (done) withdraw_notification ("task-" + t.uid);
+            });
+            add_action (set_completed);
             var complete = new SimpleAction ("complete-task", VariantType.STRING);
             complete.activate.connect ((p) => {
                 var t = store.find (p.get_string ());
@@ -408,6 +427,7 @@ namespace Singularity.Apps.Tasks {
                 n.set_body (ngettext ("%s. Time for a %d minute break.", "%s. Time for a %d minute break.", minutes).printf (title, minutes));
                 n.set_icon (new ThemedIcon ("dev.sinty.tasks"));
                 n.set_default_action_and_target_value ("app.show-task", new Variant.string (uid));
+                if (t != null && !t.trashed && !t.completed) n.add_button_with_target_value (_("Mark Done"), "app.complete-task", new Variant.string (uid));
                 n.add_button (_("Skip Break"), "app.focus-stop");
                 send_notification ("focus", n);
             } else if (finished == FocusPhase.BREAK) {

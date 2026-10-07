@@ -116,3 +116,7 @@ install_data('data/dev.sinty.tasks.json',
 install_data('data/icons/dev.sinty.tasks.svg',
   install_dir: get_option('datadir') / 'icons' / 'hicolor' / 'scalable' / 'apps'
 )
+
+install_data('data/share-targets/dev.sinty.tasks.add.ini',
+  install_dir: get_option('datadir') / 'singularity' / 'share-targets'
+)
