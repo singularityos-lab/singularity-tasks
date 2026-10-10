@@ -95,6 +95,20 @@ namespace Singularity.Apps.Tasks {
             }
         }
 
+        private uint tasks_bus_id = 0;
+
+        public override bool dbus_register (DBusConnection connection, string object_path) throws Error {
+            if (!base.dbus_register (connection, object_path)) return false;
+            tasks_bus_id = connection.register_object ("/dev/sinty/tasks/Tasks", new TasksBus (this));
+            return true;
+        }
+
+        public override void dbus_unregister (DBusConnection connection, string object_path) {
+            if (tasks_bus_id != 0) connection.unregister_object (tasks_bus_id);
+            tasks_bus_id = 0;
+            base.dbus_unregister (connection, object_path);
+        }
+
         protected override void startup () {
             base.startup ();
             IconTheme.get_for_display (Gdk.Display.get_default ()).add_resource_path ("/dev/sinty/tasks/icons");
