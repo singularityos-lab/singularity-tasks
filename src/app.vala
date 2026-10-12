@@ -4,6 +4,7 @@ namespace Singularity.Apps.Tasks {
 
     public class TasksApp : Singularity.Application {
         public TaskStore store = new TaskStore ();
+        public TasksCollab collab;
         public Storage storage;
         public OnlineTasks online;
         public string? load_error = null;
@@ -96,16 +97,23 @@ namespace Singularity.Apps.Tasks {
         }
 
         private uint tasks_bus_id = 0;
+        private uint task_collab_id = 0;
+        private uint list_collab_id = 0;
 
         public override bool dbus_register (DBusConnection connection, string object_path) throws Error {
             if (!base.dbus_register (connection, object_path)) return false;
             tasks_bus_id = connection.register_object ("/dev/sinty/tasks/Tasks", new TasksBus (this));
+            task_collab_id = connection.register_object ("/dev/sinty/tasks/Collab/Task", new TaskCollabBus (this));
+            list_collab_id = connection.register_object ("/dev/sinty/tasks/Collab/TaskList", new TaskListCollabBus (this));
             return true;
         }
 
         public override void dbus_unregister (DBusConnection connection, string object_path) {
             if (tasks_bus_id != 0) connection.unregister_object (tasks_bus_id);
             tasks_bus_id = 0;
+            if (task_collab_id != 0) connection.unregister_object (task_collab_id);
+            if (list_collab_id != 0) connection.unregister_object (list_collab_id);
+            task_collab_id = list_collab_id = 0;
             base.dbus_unregister (connection, object_path);
         }
 
@@ -129,6 +137,12 @@ namespace Singularity.Apps.Tasks {
                 load_error = e.message;
             }
             if (load_error == null) export_calendar ();
+            collab = new TasksCollab (this);
+            collab.status.connect ((message) => {
+                var w = get_active_window () as TasksWindow;
+                if (w != null) w.add_toast (new Singularity.Widgets.Toast (message));
+            });
+            if (load_error == null) collab.restore ();
             online = new OnlineTasks (store);
             try {
                 online.load_metadata ();
@@ -325,6 +339,7 @@ namespace Singularity.Apps.Tasks {
         protected override void shutdown () {
             if (focus.running) focus.stop (now_seconds ());
             flush ();
+            if (collab != null) collab.save_now ();
             save_config ();
             if (tick_source != 0) Source.remove (tick_source);
             if (reminder_source != 0) Source.remove (reminder_source);

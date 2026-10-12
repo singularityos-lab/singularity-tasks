@@ -941,6 +941,7 @@ namespace Singularity.Apps.Tasks {
             }
             menu.add_item (t.completed ? _("Mark as Not Done") : _("Mark as Done"), "object-select-symbolic", () => set_done (t, !t.completed));
             menu.add_item (_("Start Focus Timer"), "media-playback-start-symbolic", () => focus_on (t));
+            if (TasksCollab.available ()) menu.add_item (_("Send to…"), "document-send-symbolic", () => app.collab.send_task (t, row));
             menu.add_item (_("Add Subtask"), "list-add-symbolic", () => {
                 show_task (t);
                 Idle.add (() => {
@@ -1006,6 +1007,16 @@ namespace Singularity.Apps.Tasks {
             if (app.online.writable_accounts (true).size > 0) menu.add_item (_("Move to Account..."), "folder-remote-symbolic", () => choose_destination (l));
             menu.add_item (app.show_completed ? _("Hide Done Tasks") : _("Show Done Tasks"), "object-select-symbolic", () => app.activate_action ("show-completed", null));
             if (store.completed_in (l.id).size > 0) menu.add_item (_("Clear Done Tasks"), "edit-clear-all-symbolic", () => clear_completed (l));
+            if (TasksCollab.available ()) {
+                var anchor = menu.get_parent () ?? (Widget) list;
+                menu.add_separator ();
+                if (!app.collab.is_shared (l.id)) {
+                    menu.add_item (_("Share List…"), "system-users-symbolic", () => app.collab.share_list (l, anchor));
+                } else {
+                    if (app.collab.hosting (l.id)) menu.add_item (_("Invite More People…"), "system-users-symbolic", () => app.collab.share_list (l, anchor));
+                    menu.add_item (app.collab.hosting (l.id) ? _("Stop Sharing") : _("Leave Shared List"), "process-stop-symbolic", () => app.collab.stop (l.id));
+                }
+            }
             menu.add_separator ();
             menu.add_item (_("Delete List…"), "user-trash-symbolic", () => confirm_delete_list (l), "destructive-action");
         }

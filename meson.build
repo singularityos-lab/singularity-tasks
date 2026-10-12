@@ -48,6 +48,7 @@ executable('singularity-tasks',
     'src/detail.vala',
     'src/window.vala',
     'src/tasks_bus.vala',
+    'src/collab.vala',
     'src/app.vala',
     'src/search.vala',
     'src/online.vala',
@@ -125,3 +126,6 @@ install_data('data/capabilities/dev.sinty.Tasks1.ini',
 install_data('data/share-targets/dev.sinty.tasks.add.ini',
   install_dir: get_option('datadir') / 'singularity' / 'share-targets'
 )
+
+install_data('data/capabilities/dev.sinty.Collab.Task1.ini', 'data/capabilities/dev.sinty.Collab.TaskList1.ini',
+  install_dir: get_option('datadir') / 'singularity' / 'capabilities')
