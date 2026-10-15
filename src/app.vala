@@ -212,7 +212,7 @@ namespace Singularity.Apps.Tasks {
 
             var quit = new SimpleAction ("quit", null);
             quit.activate.connect (() => {
-                foreach (var w in get_windows ()) w.close ();
+                foreach (var w in get_windows ().copy ()) w.close ();
             });
             add_action (quit);
             var completed = new SimpleAction.stateful ("show-completed", null, new Variant.boolean (show_completed));
