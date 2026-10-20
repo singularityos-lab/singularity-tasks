@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Task Reminders
+Comment=Delivers task reminders while Tasks is closed
+Icon=dev.sinty.tasks
+Exec=singularity-tasks --background
+NoDisplay=true
+OnlyShowIn=Singularity;
+X-GNOME-Autostart-enabled=true

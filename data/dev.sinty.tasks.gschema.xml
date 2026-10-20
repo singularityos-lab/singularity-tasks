@@ -13,6 +13,11 @@
       <summary>Break length</summary>
       <description>Minutes of rest after a focus session.</description>
     </key>
+    <key name="reminders-in-background" type="b">
+      <default>true</default>
+      <summary>Reminders when Tasks is closed</summary>
+      <description>Keep Tasks running in the background after login so reminders arrive even when its window is closed.</description>
+    </key>
     <key name="show-in-calendar" type="b">
       <default>true</default>
       <summary>Show due tasks in Calendar</summary>

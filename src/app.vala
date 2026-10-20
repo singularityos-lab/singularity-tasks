@@ -21,15 +21,30 @@ namespace Singularity.Apps.Tasks {
         public signal void focus_changed ();
         private TasksSearch search_provider;
         private bool pending_new_task = false;
+        private bool start_hidden = false;
+        private bool held = false;
 
         public TasksApp () {
             Object (application_id: "dev.sinty.tasks", flags: ApplicationFlags.HANDLES_OPEN);
             add_main_option ("new-task", 0, OptionFlags.NONE, OptionArg.NONE, _("Start typing a new task"), null);
+            add_main_option ("background", 0, OptionFlags.NONE, OptionArg.NONE, _("Run without a window to deliver reminders"), null);
             search_provider = new TasksSearch (this);
             search_provider.export (this);
         }
 
         protected override int handle_local_options (VariantDict options) {
+            if (options.contains ("background")) {
+                if (!background_enabled ()) return 0;
+                try {
+                    register (null);
+                } catch (Error e) {
+                    warning ("tasks: %s", e.message);
+                    return 1;
+                }
+                if (get_is_remote ()) return 0;
+                start_hidden = true;
+                return -1;
+            }
             if (!options.contains ("new-task")) return -1;
             try {
                 register (null);
@@ -128,6 +143,7 @@ namespace Singularity.Apps.Tasks {
             if (schemas != null && schemas.lookup ("dev.sinty.tasks", true) != null) {
                 settings = new GLib.Settings ("dev.sinty.tasks");
                 settings.changed["show-in-calendar"].connect (() => export_calendar ());
+                settings.changed["reminders-in-background"].connect (() => sync_background ());
             }
             focus.phase_finished.connect (on_focus_finished);
             storage = new Storage (Storage.default_path ());
@@ -346,7 +362,30 @@ namespace Singularity.Apps.Tasks {
             base.shutdown ();
         }
 
+        private static bool background_enabled () {
+            var schemas = SettingsSchemaSource.get_default ();
+            var schema = schemas != null ? schemas.lookup ("dev.sinty.tasks", true) : null;
+            if (schema == null || !schema.has_key ("reminders-in-background")) return false;
+            return new GLib.Settings ("dev.sinty.tasks").get_boolean ("reminders-in-background");
+        }
+
+        private void sync_background () {
+            bool want = settings != null && settings.get_boolean ("reminders-in-background");
+            if (want && !held) {
+                hold ();
+                held = true;
+            } else if (!want && held) {
+                held = false;
+                release ();
+            }
+        }
+
         public override void activate () {
+            if (start_hidden) {
+                start_hidden = false;
+                sync_background ();
+                return;
+            }
             var w = get_active_window ();
             if (w == null) w = new TasksWindow (this);
             w.present ();

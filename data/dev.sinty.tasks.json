@@ -2,6 +2,13 @@
     "schema-id": "dev.sinty.tasks",
     "settings": [
         {
+            "key": "reminders-in-background",
+            "label": "Reminders When Closed",
+            "subtitle": "Tasks keeps running after login so reminders arrive with its window closed",
+            "type": "boolean",
+            "widget": "toggle"
+        },
+        {
             "key": "focus-minutes",
             "label": "Focus Length (minutes)",
             "type": "int",
