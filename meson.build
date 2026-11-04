@@ -60,13 +60,17 @@ executable('singularity-tasks',
 )
 
 shared_module('singularity-tasks-widget',
-  core_sources + files('src/online_mirror.vala', 'widget/today_widget.vala'),
+  core_sources + files('src/online_mirror.vala', 'widget/today_widget.vala', 'widget/today_rows.vala', 'card/agent_card.vala'),
   dependencies: [gtk_dep, gee_dep, gio_dep, json_dep, math_dep, libsingularity_dep],
   install: true,
   install_dir: get_option('libdir') / 'singularity' / 'widgets'
 )
 install_data('widget/dev.sinty.tasks.today.widget',
   install_dir: get_option('datadir') / 'singularity' / 'widgets'
+)
+
+install_data('card/dev.sinty.tasks.card',
+  install_dir: get_option('datadir') / 'singularity' / 'cards'
 )
 
 shared_module('tasks-badge',

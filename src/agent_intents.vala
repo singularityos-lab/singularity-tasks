@@ -55,6 +55,7 @@ namespace Singularity.Apps.Tasks {
                 Singularity.AppIntentRisk.UNDOABLE, (args) => {
                     var t = app.quick_add (text (args, "text"), false);
                     if (t == null) throw new IOError.INVALID_ARGUMENT ("the task could not be added");
+                    app.flush ();
                     return brief (t);
                 });
             agent.add_intent ("task_complete", "Mark a task as done, or open it again.",
@@ -63,6 +64,7 @@ namespace Singularity.Apps.Tasks {
                     var t = find (app, args);
                     bool done = !args.has_member ("done") || args.get_boolean_member ("done");
                     app.activate_action ("set-task-completed", new Variant ("(sb)", t.uid, done));
+                    app.flush ();
                     return brief (t);
                 });
             agent.add_intent ("task_show", "Open a task in the window.", UID,

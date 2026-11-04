@@ -1,0 +1,5 @@
+[Card]
+App=dev.sinty.tasks
+Intents=task_list;task_search;task_add;task_complete
+Module=libsingularity-tasks-widget.so
+Symbol=singularity_tasks_card_new
