@@ -667,6 +667,10 @@ namespace Singularity.Apps.Tasks {
     border: none;
 }
 
+label.tasks-detail-title {
+    padding: 6px 9px;
+}
+
 .tasks-notes {
     border-radius: 12px;
     background-color: @view_bg_color;

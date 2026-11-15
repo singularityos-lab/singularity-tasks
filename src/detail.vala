@@ -10,6 +10,8 @@ namespace Singularity.Apps.Tasks {
         private TasksWindow win;
         private TaskStore store;
         private Entry title_entry;
+        private Label title_label;
+        private Stack title_stack;
 
         public TaskDetail (TasksWindow win, TaskStore store, Task task) {
             Object (task: task, orientation: Orientation.VERTICAL, spacing: 16);
@@ -37,11 +39,37 @@ namespace Singularity.Apps.Tasks {
             title_entry.hexpand = true;
             title_entry.editable = !locked;
             title_entry.add_css_class ("tasks-detail-title");
+            title_label = new Label (task.title != "" ? task.title : _("Task Title"));
+            title_label.xalign = 0;
+            title_label.wrap = true;
+            title_label.wrap_mode = Pango.WrapMode.WORD_CHAR;
+            title_label.hexpand = true;
+            title_label.add_css_class ("tasks-detail-title");
+            if (task.title == "") title_label.add_css_class ("dim-label");
+            title_stack = new Stack ();
+            title_stack.hexpand = true;
+            title_stack.vhomogeneous = false;
+            title_stack.interpolate_size = true;
+            title_stack.add_named (title_label, "label");
+            title_stack.add_named (title_entry, "entry");
+            title_stack.visible_child_name = task.title == "" && !locked ? "entry" : "label";
             title_entry.changed.connect (() => {
                 task.title = title_entry.text;
+                title_label.label = task.title != "" ? task.title : _("Task Title");
+                if (task.title == "") title_label.add_css_class ("dim-label");
+                else title_label.remove_css_class ("dim-label");
                 win.task_edited (task, false);
             });
-            top.append (title_entry);
+            title_entry.activate.connect (() => title_stack.visible_child_name = "label");
+            var leave = new EventControllerFocus ();
+            leave.leave.connect (() => title_stack.visible_child_name = "label");
+            title_entry.add_controller (leave);
+            if (!locked) {
+                var click = new GestureClick ();
+                click.released.connect (() => focus_title ());
+                title_label.add_controller (click);
+            }
+            top.append (title_stack);
             var close = new Button.from_icon_name ("window-close-symbolic");
             close.add_css_class ("flat");
             close.add_css_class ("circular");
@@ -172,7 +200,8 @@ namespace Singularity.Apps.Tasks {
             });
             details.add_row (priority_row);
 
-            var tags = new EntryRow (_("Tags, separated by commas"), "tasks-tag-symbolic");
+            var tags = new EntryRow (_("Tags"), "tasks-tag-symbolic");
+            tags.placeholder_text = _("Separate tags with commas");
             tags.text = task.tags_text ();
             tags.entry_changed.connect (() => {
                 task.set_tags_from_text (tags.text);
@@ -378,6 +407,7 @@ namespace Singularity.Apps.Tasks {
         }
 
         public void focus_title () {
+            title_stack.visible_child_name = "entry";
             title_entry.grab_focus ();
         }
 
