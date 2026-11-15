@@ -164,13 +164,7 @@ namespace Singularity.Apps.Tasks {
                 current = custom;
             }
             foreach (int m in REMINDERS) labels += TaskFormat.reminder_choice (m);
-            var remind = new SelectionRow (_("Remind Me"), labels, current);
-            remind.icon_name = "alarm-symbolic";
-            if (task.due == null && task.reminder_at == null) {
-                remind.sensitive = false;
-                remind.subtitle = _("Set a due date first");
-            }
-            remind.selected.connect ((item) => {
+            var remind = choice_row (_("Remind Me"), "alarm-symbolic", labels, current, (item) => {
                 if (item == custom) return;
                 foreach (int m in REMINDERS) {
                     if (TaskFormat.reminder_choice (m) == item) {
@@ -181,6 +175,10 @@ namespace Singularity.Apps.Tasks {
                 }
                 win.task_edited (task, true);
             });
+            if (task.due == null && task.reminder_at == null) {
+                remind.sensitive = false;
+                remind.subtitle = _("Set a due date first");
+            }
             when.add_row (remind);
             build_repeat (when);
             when.sensitive = !locked;
@@ -190,9 +188,7 @@ namespace Singularity.Apps.Tasks {
             Priority[] levels = { Priority.NONE, Priority.LOW, Priority.MEDIUM, Priority.HIGH };
             string[] level_names = {};
             foreach (var p in levels) level_names += p.label ();
-            var priority_row = new SelectionRow (_("Priority"), level_names, task.priority.label ());
-            priority_row.icon_name = "tasks-priority-symbolic";
-            priority_row.selected.connect ((name) => {
+            var priority_row = choice_row (_("Priority"), "tasks-priority-symbolic", level_names, task.priority.label (), (name) => {
                 foreach (var p in levels) {
                     if (p.label () == name) task.priority = p;
                 }
@@ -213,9 +209,7 @@ namespace Singularity.Apps.Tasks {
                 string[] names = {};
                 foreach (var l in store.lists) if (!l.read_only) names += l.label ();
                 var list = store.list (task.list_id);
-                var list_row = new SelectionRow (_("List"), names, list != null ? list.label () : "");
-                list_row.icon_name = "view-list-symbolic";
-                list_row.selected.connect ((name) => {
+                var list_row = choice_row (_("List"), "view-list-symbolic", names, list != null ? list.label () : "", (name) => {
                     foreach (var l in store.lists) {
                         if (!l.read_only && l.label () == name) {
                             win.move_to_list (task, l);
@@ -305,6 +299,23 @@ namespace Singularity.Apps.Tasks {
             append (foot);
         }
 
+        private delegate void Pick (string item);
+
+        private ActionRow choice_row (string title, string icon, string[] items, string current, owned Pick pick) {
+            var row = new ActionRow (title, null, icon);
+            var drop = new ChoiceButton.from_strings (items);
+            drop.valign = Align.CENTER;
+            for (int i = 0; i < items.length; i++) {
+                if (items[i] == current) drop.selected = i;
+            }
+            string[] options = items;
+            drop.notify["selected"].connect (() => {
+                if (drop.selected < options.length) pick (options[drop.selected]);
+            });
+            row.add_suffix (drop);
+            return row;
+        }
+
         private void build_repeat (PreferencesGroup when) {
             var rule = RepeatRule.parse (task.rrule);
             string never = _("Never");
@@ -325,12 +336,7 @@ namespace Singularity.Apps.Tasks {
                 current = task.rrule;
                 items += current;
             }
-            var repeat = new SelectionRow (_("Repeat"), items, current);
-            repeat.icon_name = "media-playlist-repeat-symbolic";
-            repeat.subtitle = rule != null ? rule.describe () : (task.rrule != "" ? _("Kept as imported") : "");
-            repeat.sensitive = !task.trashed;
-            when.add_row (repeat);
-            repeat.selected.connect ((item) => {
+            var repeat = choice_row (_("Repeat"), "media-playlist-repeat-symbolic", items, current, (item) => {
                 if (item == current) return;
                 var r = rule ?? new RepeatRule ();
                 r.days.clear ();
@@ -362,6 +368,9 @@ namespace Singularity.Apps.Tasks {
                     return Source.REMOVE;
                 });
             });
+            repeat.subtitle = rule != null ? rule.describe () : (task.rrule != "" ? _("Kept as imported") : "");
+            repeat.sensitive = !task.trashed;
+            when.add_row (repeat);
             if (rule == null || rule.is_weekdays ()) return;
             string unit;
             switch (rule.frequency) {
