@@ -36,7 +36,7 @@ namespace Singularity.Apps.Tasks {
         private Label focus_title;
         private Label focus_time;
         private Button focus_pause;
-        private Revealer panel_revealer;
+        private Singularity.Widgets.DetailPane pane;
         private ScrolledWindow panel_scroll;
         private TaskDetail? detail;
         private SearchBubble search;
@@ -202,30 +202,26 @@ namespace Singularity.Apps.Tasks {
             body.add_named (scroll, "list");
             body.add_named (empty, "empty");
             main.append (body);
-            content.append (main);
+            pane = new Singularity.Widgets.DetailPane (main);
+            pane.hexpand = true;
+            pane.panel_width = 416;
+            content.append (pane);
 
             panel_scroll = new ScrolledWindow ();
             panel_scroll.hscrollbar_policy = PolicyType.NEVER;
             panel_scroll.vexpand = true;
-            panel_scroll.set_size_request (400, -1);
             var outer = new Box (Orientation.VERTICAL, 0);
             outer.margin_end = 16;
             outer.margin_bottom = 16;
             apply_view_edge (outer);
             outer.append (panel_scroll);
-            panel_revealer = new Revealer ();
-            panel_revealer.transition_type = RevealerTransitionType.SLIDE_LEFT;
-            panel_revealer.child = outer;
-            panel_revealer.hexpand = false;
-            panel_revealer.visible = false;
-            panel_revealer.notify["child-revealed"].connect (() => {
-                if (!panel_revealer.reveal_child && !panel_revealer.child_revealed) {
-                    panel_revealer.visible = false;
-                    panel_scroll.child = null;
-                    detail = null;
-                }
+            pane.set_panel (outer);
+            pane.attach_back_bubble (this);
+            pane.panel_closed.connect (() => {
+                panel_scroll.child = null;
+                detail = null;
+                sync_actions ();
             });
-            content.append (panel_revealer);
             return content;
         }
 
@@ -552,7 +548,7 @@ namespace Singularity.Apps.Tasks {
             set_action_enabled ("sync-now", online);
             set_action_enabled ("clear-completed", has_list);
             set_action_enabled ("delete-task", main && tr != null && !tr.task.trashed && !store.is_read_only (tr.task));
-            set_action_enabled ("focus-task", main && ((tr != null && !tr.task.trashed) || (detail != null && panel_revealer.reveal_child)));
+            set_action_enabled ("focus-task", main && ((tr != null && !tr.task.trashed) || (detail != null && pane.reveal_panel)));
             set_action_enabled ("view-today", main);
             set_action_enabled ("view-upcoming", main);
             set_action_enabled ("view-trash", main);
@@ -778,8 +774,7 @@ namespace Singularity.Apps.Tasks {
         public void show_task (Task t) {
             detail = new TaskDetail (this, store, t);
             panel_scroll.child = detail;
-            panel_revealer.visible = true;
-            panel_revealer.reveal_child = true;
+            pane.reveal_panel = true;
         }
 
         private void reload_detail () {
@@ -792,7 +787,7 @@ namespace Singularity.Apps.Tasks {
         }
 
         public void close_detail () {
-            panel_revealer.reveal_child = false;
+            pane.reveal_panel = false;
         }
 
         public void add_subtask (Task parent, string text) {
@@ -1319,7 +1314,7 @@ namespace Singularity.Apps.Tasks {
                         case "view-trash": if (stack.visible_child_name == "main") select_view (TRASH); break;
                         case "focus-task":
                             var sel = list.get_selected_row () as TaskRow;
-                            Task? target = detail != null && panel_revealer.reveal_child ? detail.task : (sel != null ? sel.task : null);
+                            Task? target = detail != null && pane.reveal_panel ? detail.task : (sel != null ? sel.task : null);
                             if (target != null) focus_on (target);
                             break;
                         case "empty-trash": confirm_empty_trash (); break;
@@ -1333,7 +1328,7 @@ namespace Singularity.Apps.Tasks {
             var keys = new EventControllerKey ();
             keys.key_pressed.connect ((keyval, code, state) => {
                 if (keyval != Gdk.Key.Escape) return false;
-                if (panel_revealer.reveal_child) {
+                if (pane.reveal_panel) {
                     close_detail ();
                     return true;
                 }
