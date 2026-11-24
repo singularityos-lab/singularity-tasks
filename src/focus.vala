@@ -95,6 +95,20 @@ namespace Singularity.Apps.Tasks {
             }
         }
 
+        public Variant save_state () {
+            return new Variant ("(isbiixxxi)", (int) phase, task_uid, paused, focus_length, break_length, phase_start, paused_at, paused_total, length);
+        }
+
+        public void restore_state (Variant state) {
+            int p;
+            string uid;
+            bool was_paused;
+            state.get ("(isbiixxxi)", out p, out uid, out was_paused, out focus_length, out break_length, out phase_start, out paused_at, out paused_total, out length);
+            task_uid = uid;
+            paused = was_paused;
+            phase = (FocusPhase) p;
+        }
+
         public static string clock (int seconds) {
             int s = int.max (0, seconds);
             if (s >= 3600) return "%d:%02d:%02d".printf (s / 3600, (s / 60) % 60, s % 60);

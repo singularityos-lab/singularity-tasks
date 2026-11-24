@@ -2,7 +2,7 @@ using Gtk;
 
 namespace Singularity.Apps.Tasks {
 
-    public class TasksApp : Singularity.Application {
+    public class TasksApp : Singularity.Application, Singularity.Migration.Migratable {
         public TaskStore store = new TaskStore ();
         public TasksCollab collab;
         public Storage storage;
@@ -394,6 +394,47 @@ namespace Singularity.Apps.Tasks {
                 pending_new_task = false;
                 ((TasksWindow) w).focus_add ();
             }
+        }
+
+        public Variant save_model () {
+            var d = new VariantDict ();
+            d.insert_value ("show-completed", new Variant.boolean (show_completed));
+            d.insert_value ("focus", focus.save_state ());
+            return d.end ();
+        }
+
+        public async void restore_model (Variant model) throws Error {
+            var d = new VariantDict (model);
+            var completed = d.lookup_value ("show-completed", VariantType.BOOLEAN);
+            if (completed != null && completed.get_boolean () != show_completed) {
+                show_completed = completed.get_boolean ();
+                ((SimpleAction) lookup_action ("show-completed")).set_state (new Variant.boolean (show_completed));
+                save_config ();
+                store.notify_changed ();
+            }
+            var timer = d.lookup_value ("focus", new VariantType ("(isbiixxxi)"));
+            if (timer == null) return;
+            focus.restore_state (timer);
+            if (focus.running) ensure_focus_tick ();
+            focus_changed ();
+        }
+
+        public string window_kind (Gtk.Window w) {
+            return (w is TasksWindow) ? "tasks" : "";
+        }
+
+        public Variant save_window (Gtk.Window w) {
+            return ((TasksWindow) w).save_migration ();
+        }
+
+        public async Gtk.Window? rebuild_window (string kind, Variant data) throws Error {
+            if (kind != "tasks") return null;
+            foreach (var old in get_windows ().copy ()) {
+                if (old is TasksWindow) old.destroy ();
+            }
+            var w = new TasksWindow (this);
+            w.restore_migration (data);
+            return w;
         }
 
         public override void open (File[] files, string hint) {

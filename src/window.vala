@@ -65,6 +65,7 @@ namespace Singularity.Apps.Tasks {
             set_content (stack);
 
             search = add_bubble_search (_("Search Tasks"), (t) => {
+                if (t.strip () == query) return;
                 query = t.strip ();
                 refresh ();
             });
@@ -253,6 +254,43 @@ namespace Singularity.Apps.Tasks {
             if (is_list_view ()) add_entry.grab_focus ();
         }
 
+        public Variant save_migration () {
+            var d = new VariantDict ();
+            d.insert_value ("view", new Variant.string (view));
+            d.insert_value ("query", new Variant.string (search.text));
+            d.insert_value ("task", new Variant.string (detail != null && pane.reveal_panel ? detail.task.uid : ""));
+            var tags = new Gee.ArrayList<string> ();
+            tags.add_all (skip_tags);
+            tags.sort ((a, b) => strcmp (a, b));
+            d.insert_value ("skip", new Variant ("(bbb@as)", skip_dates, skip_repeat, skip_priority, new Variant.strv (tags.to_array ())));
+            return d.end ();
+        }
+
+        public void restore_migration (Variant data) {
+            var d = new VariantDict (data);
+            string wanted = (d.lookup_value ("view", VariantType.STRING) ?? new Variant.string (view)).get_string ();
+            if (wanted == TODAY || wanted == UPCOMING || wanted == TRASH || (wanted.has_prefix ("list:") && store.list (wanted.substring (5)) != null)) {
+                view = wanted;
+                app.last_view = wanted;
+                if (is_list_view ()) app.last_list = view_list_id ();
+            }
+            string text = (d.lookup_value ("query", VariantType.STRING) ?? new Variant.string ("")).get_string ();
+            search.text = text;
+            query = text.strip ();
+            refresh ();
+            var skip = d.lookup_value ("skip", new VariantType ("(bbbas)"));
+            if (skip != null) {
+                skip_dates = skip.get_child_value (0).get_boolean ();
+                skip_repeat = skip.get_child_value (1).get_boolean ();
+                skip_priority = skip.get_child_value (2).get_boolean ();
+                skip_tags.clear ();
+                foreach (string tag in skip.get_child_value (3).get_strv ()) skip_tags.add (tag);
+            }
+            string uid = (d.lookup_value ("task", VariantType.STRING) ?? new Variant.string ("")).get_string ();
+            var t = uid != "" ? store.find (uid) : null;
+            if (t != null) show_task (t);
+        }
+
         private void queue_refresh () {
             if (refresh_source != 0) return;
             refresh_source = Idle.add (() => {
@@ -423,6 +461,8 @@ namespace Singularity.Apps.Tasks {
                 fill_empty ();
             } else {
                 body.visible_child_name = "list";
+                var stale = body.get_child_by_name ("none");
+                if (stale != null) body.remove (stale);
             }
             if (select != null) list.select_row (select);
             Idle.add (() => {
