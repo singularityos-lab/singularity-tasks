@@ -2,7 +2,7 @@ using Gtk;
 
 namespace Singularity.Apps.Tasks {
 
-    public class TasksApp : Singularity.Application, Singularity.Migration.Migratable {
+    public class TasksApp : Singularity.Application, Singularity.Migration.Migratable, Singularity.Startup.Bootable {
         public TaskStore store = new TaskStore ();
         public TasksCollab collab;
         public Storage storage;
@@ -381,7 +381,38 @@ namespace Singularity.Apps.Tasks {
             }
         }
 
-        public override void activate () {
+        public Singularity.Startup.Plan build_plan (Singularity.Startup.Request request) {
+            var plan = new Singularity.Startup.Plan ();
+            plan.version = "tasks-1";
+            if (request.kind == Singularity.Startup.RequestKind.SERVICE) {
+                plan.main ("ready", Singularity.Startup.Category.PREPARE, (c) => {})
+                    .reaches (Singularity.Startup.Milestone.SHELL_READY)
+                    .reaches (Singularity.Startup.Milestone.CONTENT_READY)
+                    .reaches (Singularity.Startup.Milestone.INTERACTIVE);
+                return plan;
+            }
+            var window = plan.main ("window", Singularity.Startup.Category.SHELL, (c) => {
+                show_window ();
+                c.window = get_active_window ();
+            }).reaches (Singularity.Startup.Milestone.SHELL_READY);
+            if (request.kind == Singularity.Startup.RequestKind.OPEN) {
+                var files = request.files ();
+                plan.main ("open-file", Singularity.Startup.Category.CONTENT, (c) => import_files (files))
+                    .depends_on ("window")
+                    .reaches (Singularity.Startup.Milestone.CONTENT_READY)
+                    .reaches (Singularity.Startup.Milestone.INTERACTIVE);
+            } else {
+                window.reaches (Singularity.Startup.Milestone.CONTENT_READY).reaches (Singularity.Startup.Milestone.INTERACTIVE);
+            }
+            return plan;
+        }
+
+        public void handle_request (Singularity.Startup.Request request) {
+            show_window ();
+            if (request.kind == Singularity.Startup.RequestKind.OPEN) import_files (request.files ());
+        }
+
+        private void show_window () {
             if (start_hidden) {
                 start_hidden = false;
                 sync_background ();
@@ -437,8 +468,7 @@ namespace Singularity.Apps.Tasks {
             return w;
         }
 
-        public override void open (File[] files, string hint) {
-            activate ();
+        private void import_files (File[] files) {
             var w = get_active_window () as TasksWindow;
             if (w == null) return;
             foreach (var f in files) w.import_ics.begin (f);
